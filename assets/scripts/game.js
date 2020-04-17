@@ -29,13 +29,30 @@ cc.Class({
             default: null
         },
 
+        pokerCacheData: {
+            default: null,
+            type: Object
+        },
+
+        handPoker: {
+            default: null,
+            type: Object
+        }
     },
 
     // LIFE-CYCLE CALLBACKS:
 
     onLoad () {
-        this.watting.enabled = false;
-
+        var _this = this;
+        _this.watting.enabled = false;
+        _this.handPoker = {};
+        
+        _this.pokerCache();
+        setTimeout(function () {
+            //_this.displayPoker();
+            _this.dealt({'data':[1,2,3,4,5]});
+        }, 2000)
+        
     },
 
     start () {
@@ -51,9 +68,16 @@ cc.Class({
             let startStr = JSON.stringify(startObj);
             _this.ws.send(startStr);
         })
+    },
 
-        
-        _this.displayPoker();
+    pokerCache() {
+        var _this = this;
+        cc.loader.loadResDir('poker', cc.SpriteFrame, function(err, assets) {
+            assets.sort(function(x,y){
+                return x.name - y.name;
+            });
+            _this.pokerCacheData = assets;
+        });
     },
 
     connect() {
@@ -106,37 +130,117 @@ cc.Class({
     },
 
     dealt(data) {
-        cc.log(data)
+        cc.log(data);
+        this.displayPoker(data.data);
+        let handPoker = this.handPoker;
+        setTimeout(function() {
+            for (let key in handPoker) {
+                console.log(handPoker[key]);
+                handPoker[key].destroy();
+            }
+        }, 1000)
     },
 
     displayPoker(data) {
         var _this = this;
         var scene = cc.director.getScene();
-        var a = [1,2,3,4,5,6,7,8,9,10];
-        var jiange = 50;
-        cc.loader.loadResDir("poker", cc.SpriteFrame, function (err, assets) {
-            // assets 是一个 SpriteFrame 数组，已经包含了图集中的所有 SpriteFrame。
-            // 而 loadRes('test assets/sheep', cc.SpriteAtlas, function (err, atlas) {...}) 获得的则是整个 SpriteAtlas 对象。
-            var nowList = [];
-            a.forEach(function(e) {
-                cc.log(e);
-                nowList.push(assets[e - 1]);
-            });
-            //cc.log(assets);return false;
-            nowList.forEach(function(e, index) {
-                //cc.log(e);
-                var aaa = new cc.Node('Sprite');
-                var sp = aaa.addComponent(cc.Sprite);
-                sp.spriteFrame = e;
-                aaa.parent = _this.node;
+        //var a = [1,2,3,4,5,6,7,8,9,10];
+        var a = data;
+        var windowSize = cc.view.getVisibleSize();
+        var interval = windowSize.width / 22;
+        
+        a.forEach(function(e, index) {
+            //console.log(_this.pokerCacheData[e - 1]);
+            var name = "node" + e;
+            window[name] = new cc.Node(name);
+            var sprite = window[name].addComponent(cc.Sprite);
+            sprite.spriteFrame = _this.pokerCacheData[e - 1];
+            window[name].parent = _this.node;
 
-                let windowSize=cc.view.getVisibleSize();
-                let startX = 0 - (windowSize.width * 0.8 / 2);
-                let p = startX + index * jiange;
-
-                aaa.setPosition(p, 0);
-            })
+            var startX = 0 - (a.length / 2) * interval;
+            var thisStartX = startX + index * interval;
+            var startY = 0 - windowSize.height / 4;
+            window[name].setPosition(thisStartX, startY);
+            
+            //加入手牌
+             _this.handPoker[e] = window[name];
         });
+        //console.log(_this.handPoker);
+    },
+
+    pockerWeight(poker)
+    {
+        var _this = this;
+        var pokerList = new Array();
+        poker.forEach(function(e) {
+            let weight = _this.pokerMap(e);
+        });
+        return pokerList;
+    },
+
+    pockerMap(poker)
+    {
+        var map = {
+            1 : 14,
+            2 : 15,
+
+            3 : 1,
+            4 : 2,
+            5 : 3,
+            6 : 4,
+            7 : 5,
+            8 : 6,
+            9 : 7,
+            10 : 8,
+            11 : 9,
+            12 : 10,
+            13 : 11,
+            14 : 12,
+            15 : 13,
+
+            16 : 1,
+            17 : 2,
+            18 : 3,
+            19 : 4,
+            20 : 5,
+            21 : 6,
+            22 : 7,
+            23 : 8,
+            24 : 9,
+            25 : 10,
+            26 : 11,
+            27 : 12,
+            28 : 13,
+
+            29 : 1,
+            30 : 2,
+            31 : 3,
+            32 : 4,
+            33 : 5,
+            34 : 6,
+            35 : 7,
+            36 : 8,
+            37 : 9,
+            38 : 10,
+            39 : 11,
+            40 : 12,
+            41 : 13,
+
+            42 : 1,
+            43 : 2,
+            44 : 3,
+            45 : 4,
+            46 : 5,
+            47 : 6,
+            48 : 7,
+            49 : 8,
+            50 : 9,
+            51 : 10,
+            52 : 11,
+            53 : 12,
+            54 : 13,
+        };
+        return map[poker];
     }
 
     // update (dt) {},
