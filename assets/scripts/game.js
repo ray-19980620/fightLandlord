@@ -8,6 +8,17 @@
 //  - [Chinese] https://docs.cocos.com/creator/manual/zh/scripting/life-cycle-callbacks.html
 //  - [English] https://www.cocos2d-x.org/docs/creator/manual/en/scripting/life-cycle-callbacks.html
 
+/* To-do
+* 1.注册触摸事件
+* 2.不出、出牌按钮及点击出牌获取牌并在后台校验合法情况下destroy
+* 3.拿出地主牌
+* 4.查清先手顺序
+* 5.解决玩家操作顺序问题
+* 6.玩家每轮操作倒计时
+* 7.抢地主逻辑
+* 8.
+*/
+
 cc.Class({
     extends: cc.Component,
 
@@ -37,6 +48,11 @@ cc.Class({
         handPoker: {
             default: null,
             type: Object
+        },
+
+        readyPoker: {
+            default: null,
+            type: Array
         }
     },
 
@@ -46,11 +62,12 @@ cc.Class({
         var _this = this;
         _this.watting.enabled = false;
         _this.handPoker = {};
+        _this.readyPoker = [];
         
         _this.pokerCache();
         setTimeout(function () {
             //_this.displayPoker();
-            _this.dealt({'data':[1,2,3,4,5]});
+            _this.dealt({'data':[7,6,5,4,3,2,1]});
         }, 2000)
         
     },
@@ -130,19 +147,58 @@ cc.Class({
     },
 
     dealt(data) {
+        var _this = this;
         cc.log(data);
+
+        //渲染
         this.displayPoker(data.data);
+        //销毁
         let handPoker = this.handPoker;
         setTimeout(function() {
             for (let key in handPoker) {
-                console.log(handPoker[key]);
+                //console.log(handPoker[key]);
                 handPoker[key].destroy();
             }
-        }, 1000)
+            _this.handPoker = [];
+
+            //洗牌按照权重排序
+            let poker = data.data;
+            let weightArr = new Array();
+            let fWeightArr = new Array();
+            //权重map
+            poker.forEach(function(e, index) {
+                //console.log(e);
+                let weight = _this.pockerMap(e);
+                weightArr[e] = weight;
+            });
+            //生成牌与权重arr
+            //console.log(weightArr);
+            poker.forEach(function(e, index) {
+                fWeightArr[e] = new Array();
+                fWeightArr[e]['weight'] = weightArr[e];
+                fWeightArr[e]['index'] = e;
+            });
+            //排序
+            fWeightArr.sort(function(x, y) {
+                return y['weight'] - x['weight'];
+            });
+            
+            //生成新牌序
+            let newPokerOrder = new Array();
+            fWeightArr.forEach(function(e, index) {
+                newPokerOrder[index] = e.index;
+            });
+            //console.log(newPokerOrder);
+            //渲染
+            
+            _this.displayPoker(newPokerOrder);
+        }, 1000);
+
     },
 
     displayPoker(data) {
         var _this = this;
+        console.log(data);
         var scene = cc.director.getScene();
         //var a = [1,2,3,4,5,6,7,8,9,10];
         var a = data;
@@ -155,12 +211,33 @@ cc.Class({
             window[name] = new cc.Node(name);
             var sprite = window[name].addComponent(cc.Sprite);
             sprite.spriteFrame = _this.pokerCacheData[e - 1];
+            window[name].poker = e;
             window[name].parent = _this.node;
 
             var startX = 0 - (a.length / 2) * interval;
             var thisStartX = startX + index * interval;
-            var startY = 0 - windowSize.height / 4;
+            var startY = 0 - windowSize.height / 3;
             window[name].setPosition(thisStartX, startY);
+
+            //注册点击事件
+            window[name].on('mousedown', function(event) {
+                event.stopPropagation();
+                //console.log(event.target.poker);
+                let thisSprite = _this.handPoker[event.target.poker];
+                let poker = event.target.poker;
+
+                if (_this.readyPoker[poker] == undefined) {
+                    _this.readyPoker[poker] = new Array();
+                    var newY = thisSprite.y + 40;
+                } else if (_this.readyPoker[poker]) {
+                    delete _this.readyPoker[poker];
+                    var newY = thisSprite.y - 40;
+                }
+                thisSprite.setPosition(thisSprite.x, newY);
+            })
+
+            //注册触摸事件
+            
             
             //加入手牌
              _this.handPoker[e] = window[name];
@@ -168,8 +245,7 @@ cc.Class({
         //console.log(_this.handPoker);
     },
 
-    pockerWeight(poker)
-    {
+    pockerWeight(poker) {
         var _this = this;
         var pokerList = new Array();
         poker.forEach(function(e) {
@@ -178,11 +254,14 @@ cc.Class({
         return pokerList;
     },
 
-    pockerMap(poker)
-    {
+    gameOperateShow() {
+        //不出、出牌
+    },
+
+    pockerMap(poker) {
         var map = {
-            1 : 14,
-            2 : 15,
+            1 : 15,
+            2 : 14,
 
             3 : 1,
             4 : 2,
@@ -241,7 +320,8 @@ cc.Class({
             54 : 13,
         };
         return map[poker];
-    }
+    },
+
 
     // update (dt) {},
 });
