@@ -76,10 +76,10 @@ cc.Class({
         
         _this.pokerCache();
         // setTimeout(function () {
-        //     _this.displayPoker();
+        //     _this.displayPoker([7,6,5,4,3,2,1]);
         //     _this.dealt({'data':[7,6,5,4,3,2,1]});
         // }, 2000)
-        _this.isItYourTurn();
+        //_this.isItYourTurn();
     },
 
     start () {
@@ -94,8 +94,6 @@ cc.Class({
             };
             let startStr = JSON.stringify(startObj);
             _this.ws.send(startStr);
-
-            
         })
     },
 
@@ -160,12 +158,36 @@ cc.Class({
 
     isItYourTurn(data) {
         //data.countdown
-        console.log(66666);
         var _this = this;
-        var scene = cc.director.getScene();
+
         var playButton = cc.instantiate(_this.playButton);
-        playButton.parent = scene;
+        _this.node.addChild(playButton);
         playButton.setPosition(150, -50);
+
+        //出牌
+        playButton.on('mousedown', function(event) {
+            console.log(_this.readyPoker);
+            var readySend = new Array();
+            _this.readyPoker.forEach(function(e, index) {
+                readySend.push(index);
+            });
+            let sendData = {
+                method: 'fuck',
+                data: {
+                    poker: readySend
+                }
+            };
+            let sendDataStr = JSON.stringify(sendData);
+            var a = _this.ws.send(sendDataStr);
+        });
+
+        var noPlayButton = cc.instantiate(_this.noPlayButton);
+        _this.node.addChild(noPlayButton);
+        noPlayButton.setPosition(-150, -50);
+        //不出
+        noPlayButton.on('mousedown', function(event) {
+            console.log('不出');
+        });
     },
 
     dealt(data) {
@@ -248,7 +270,7 @@ cc.Class({
                 let thisSprite = _this.handPoker[event.target.poker];
                 let poker = event.target.poker;
 
-                if (_this.readyPoker[poker] == undefined) {
+                if (!_this.readyPoker[poker]) {
                     _this.readyPoker[poker] = new Array();
                     var newY = thisSprite.y + 35;
                 } else if (_this.readyPoker[poker]) {
@@ -265,6 +287,14 @@ cc.Class({
              _this.handPoker[e] = window[name];
         });
         //console.log(_this.handPoker);
+    },
+
+    hidePlayButton(data) {
+        var _this = this;
+        var poker = data.data;
+        
+        //重新渲染
+        this.displayPoker(data.data);
     },
 
     pockerWeight(poker) {
