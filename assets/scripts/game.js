@@ -53,6 +53,16 @@ cc.Class({
         readyPoker: {
             default: null,
             type: Array
+        },
+
+        playButton: {
+            default: null,
+            type: cc.Prefab
+        },
+
+        noPlayButton: {
+            default: null,
+            type: cc.Prefab
         }
     },
 
@@ -65,11 +75,11 @@ cc.Class({
         _this.readyPoker = [];
         
         _this.pokerCache();
-        setTimeout(function () {
-            //_this.displayPoker();
-            _this.dealt({'data':[7,6,5,4,3,2,1]});
-        }, 2000)
-        
+        // setTimeout(function () {
+        //     _this.displayPoker();
+        //     _this.dealt({'data':[7,6,5,4,3,2,1]});
+        // }, 2000)
+        _this.isItYourTurn();
     },
 
     start () {
@@ -84,6 +94,8 @@ cc.Class({
             };
             let startStr = JSON.stringify(startObj);
             _this.ws.send(startStr);
+
+            
         })
     },
 
@@ -106,7 +118,7 @@ cc.Class({
         ws.onmessage = function (event) {
             console.log(event.data);
             var data = eval('(' + event.data + ')');
-            console.log(data.data);
+            //console.log(data.data);
             eval("_this." + data.method + "(data)");
         };
         ws.onerror = function (event) {
@@ -144,6 +156,16 @@ cc.Class({
 
     wattingHidden() {
         this.watting.enabled = false;
+    },
+
+    isItYourTurn(data) {
+        //data.countdown
+        console.log(66666);
+        var _this = this;
+        var scene = cc.director.getScene();
+        var playButton = cc.instantiate(_this.playButton);
+        playButton.parent = scene;
+        playButton.setPosition(150, -50);
     },
 
     dealt(data) {
@@ -214,7 +236,7 @@ cc.Class({
             window[name].poker = e;
             window[name].parent = _this.node;
 
-            var startX = 0 - (a.length / 2) * interval;
+            var startX = 0 - (a.length / 2) * interval + interval / 2;
             var thisStartX = startX + index * interval;
             var startY = 0 - windowSize.height / 3;
             window[name].setPosition(thisStartX, startY);
@@ -228,10 +250,10 @@ cc.Class({
 
                 if (_this.readyPoker[poker] == undefined) {
                     _this.readyPoker[poker] = new Array();
-                    var newY = thisSprite.y + 40;
+                    var newY = thisSprite.y + 35;
                 } else if (_this.readyPoker[poker]) {
                     delete _this.readyPoker[poker];
-                    var newY = thisSprite.y - 40;
+                    var newY = thisSprite.y - 35;
                 }
                 thisSprite.setPosition(thisSprite.x, newY);
             })
@@ -254,9 +276,6 @@ cc.Class({
         return pokerList;
     },
 
-    gameOperateShow() {
-        //不出、出牌
-    },
 
     pockerMap(poker) {
         var map = {
