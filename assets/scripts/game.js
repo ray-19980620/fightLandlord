@@ -109,7 +109,7 @@ cc.Class({
 
     connect() {
         var _this = this;
-        var ws = new WebSocket("ws://45.76.210.201:5200");
+        var ws = new WebSocket("ws://119.23.223.46:5200");
         ws.onopen = function (event) {
             console.log("Send Text WS was opened.");
         };
@@ -205,42 +205,13 @@ cc.Class({
             }
             _this.handPoker = [];
 
-            //洗牌按照权重排序
-            let poker = data.data;
-            let weightArr = new Array();
-            let fWeightArr = new Array();
-            //权重map
-            poker.forEach(function(e, index) {
-                //console.log(e);
-                let weight = _this.pockerMap(e);
-                weightArr[e] = weight;
-            });
-            //生成牌与权重arr
-            //console.log(weightArr);
-            poker.forEach(function(e, index) {
-                fWeightArr[e] = new Array();
-                fWeightArr[e]['weight'] = weightArr[e];
-                fWeightArr[e]['index'] = e;
-            });
-            //排序
-            fWeightArr.sort(function(x, y) {
-                return y['weight'] - x['weight'];
-            });
-            
-            //生成新牌序
-            let newPokerOrder = new Array();
-            fWeightArr.forEach(function(e, index) {
-                newPokerOrder[index] = e.index;
-            });
-            //console.log(newPokerOrder);
-            //渲染
-            
-            _this.displayPoker(newPokerOrder);
+            var newOrder = _this.orderPoker(data.data);
+            _this.displayPoker(newOrder);
         }, 1000);
 
     },
 
-    displayPoker(data) {
+    displayPoker(data, type) {
         var _this = this;
         console.log(data);
         var scene = cc.director.getScene();
@@ -260,7 +231,12 @@ cc.Class({
 
             var startX = 0 - (a.length / 2) * interval + interval / 2;
             var thisStartX = startX + index * interval;
-            var startY = 0 - windowSize.height / 3;
+            if (type == 'fuck') {
+                var startY = 80;
+            } else {
+                var startY = 0 - windowSize.height / 3;
+            }
+            
             window[name].setPosition(thisStartX, startY);
 
             //注册点击事件
@@ -289,12 +265,70 @@ cc.Class({
         //console.log(_this.handPoker);
     },
 
+    orderPoker(poker) {
+        var _this = this;
+        //洗牌按照权重排序
+        var poker = poker;
+        console.log(poker);
+        let weightArr = new Array();
+        let fWeightArr = new Array();
+        //权重map
+        poker.forEach(function(e, index) {
+            //console.log(e);
+            let weight = _this.pockerMap(e);
+            weightArr[e] = weight;
+        });
+        //生成与权重arr
+        //console.log(weightArr);
+        poker.forEach(function(e, index) {
+            fWeightArr[e] = new Array();
+            fWeightArr[e]['weight'] = weightArr[e];
+            fWeightArr[e]['index'] = e;
+        });
+        //排序
+        fWeightArr.sort(function(x, y) {
+            return y['weight'] - x['weight'];
+        });
+        
+        //生成新牌序
+        let newPokerOrder = new Array();
+        fWeightArr.forEach(function(e, index) {
+            newPokerOrder[index] = e.index;
+        });
+        //console.log(newPokerOrder);
+        //渲染
+        return newPokerOrder;
+    },
+
     hidePlayButton(data) {
         var _this = this;
         var poker = data.data;
         
+        let handPoker = _this.handPoker;
+        for (let key in handPoker) {
+            handPoker[key].destroy();
+        }
+
+        var playButton = this.node.getChildByName('playButton');
+        console.log(playButton);
+        playButton.destroy();
+
+        var noPlayButton = this.node.getChildByName('noPlayButton');
+        console.log(noPlayButton);
+        noPlayButton.destroy();
         //重新渲染
-        this.displayPoker(data.data);
+        var newOrder = this.orderPoker(data.data);
+        _this.displayPoker(newOrder);
+    },
+
+    anotherNumberChange(data) {
+        var _this = this;
+        console.log(data);
+        var remainPokerLen = data.data.remainPokerLen;
+        var thisRoundPoker = data.data.thisRoundPoker;
+
+        var newOrder = this.orderPoker(thisRoundPoker);
+        _this.displayPoker(newOrder, 'fuck');
     },
 
     pockerWeight(poker) {
