@@ -63,6 +63,11 @@ cc.Class({
         noPlayButton: {
             default: null,
             type: cc.Prefab
+        },
+
+        noticeLable: {
+            default: null,
+            type: cc.Prefab
         }
     },
 
@@ -187,6 +192,12 @@ cc.Class({
         //不出
         noPlayButton.on('mousedown', function(event) {
             console.log('不出');
+            let sendData = {
+                method: 'pass',
+                data: {}
+            };
+            let sendDataStr = JSON.stringify(sendData);
+            var a = _this.ws.send(sendDataStr);
         });
     },
 
@@ -240,21 +251,23 @@ cc.Class({
             window[name].setPosition(thisStartX, startY);
 
             //注册点击事件
-            window[name].on('mousedown', function(event) {
-                event.stopPropagation();
-                //console.log(event.target.poker);
-                let thisSprite = _this.handPoker[event.target.poker];
-                let poker = event.target.poker;
+            if (type != 'fuck') {
+                window[name].on('mousedown', function(event) {
+                    event.stopPropagation();
+                    //console.log(event.target.poker);
+                    let thisSprite = _this.handPoker[event.target.poker];
+                    let poker = event.target.poker;
 
-                if (!_this.readyPoker[poker]) {
-                    _this.readyPoker[poker] = new Array();
-                    var newY = thisSprite.y + 35;
-                } else if (_this.readyPoker[poker]) {
-                    delete _this.readyPoker[poker];
-                    var newY = thisSprite.y - 35;
-                }
-                thisSprite.setPosition(thisSprite.x, newY);
-            })
+                    if (!_this.readyPoker[poker]) {
+                        _this.readyPoker[poker] = new Array();
+                        var newY = thisSprite.y + 35;
+                    } else if (_this.readyPoker[poker]) {
+                        delete _this.readyPoker[poker];
+                        var newY = thisSprite.y - 35;
+                    }
+                    thisSprite.setPosition(thisSprite.x, newY);
+                })
+            }
 
             //注册触摸事件
             
@@ -300,14 +313,21 @@ cc.Class({
         return newPokerOrder;
     },
 
+    gameNotice(data) {
+        var _this = this;
+        var msg = data.data.msg;
+        var noticeLable = cc.instantiate(_this.noticeLable);
+        noticeLable.getComponent(cc.Label).string = msg;
+        _this.node.addChild(noticeLable);
+        noticeLable.setPosition(0, 0);
+        setTimeout(function() {
+            noticeLable.destroy();
+        }, 2000);
+    },
+
     hidePlayButton(data) {
         var _this = this;
         var poker = data.data;
-        
-        let handPoker = _this.handPoker;
-        for (let key in handPoker) {
-            handPoker[key].destroy();
-        }
 
         var playButton = this.node.getChildByName('playButton');
         console.log(playButton);
@@ -316,6 +336,16 @@ cc.Class({
         var noPlayButton = this.node.getChildByName('noPlayButton');
         console.log(noPlayButton);
         noPlayButton.destroy();
+
+        if (poker.length <= 0) {
+            return false;
+        }
+
+        let handPoker = _this.handPoker;
+        for (let key in handPoker) {
+            handPoker[key].destroy();
+        }
+
         //重新渲染
         var newOrder = this.orderPoker(data.data);
         _this.displayPoker(newOrder);
