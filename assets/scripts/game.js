@@ -10,10 +10,10 @@
 
 /* To-do
 * 1.注册触摸事件
-* 2.不出、出牌按钮及点击出牌获取牌并在后台校验合法情况下destroy
+* 2.34能一起出的问题
 * 3.拿出地主牌
 * 4.查清先手顺序
-* 5.解决玩家操作顺序问题
+* 5.
 * 6.玩家每轮操作倒计时
 * 7.抢地主逻辑
 * 8.
@@ -68,7 +68,12 @@ cc.Class({
         noticeLable: {
             default: null,
             type: cc.Prefab
-        }
+        },
+
+        lastPoker: {
+            default: null,
+            type: Object
+        },
     },
 
     // LIFE-CYCLE CALLBACKS:
@@ -77,6 +82,7 @@ cc.Class({
         var _this = this;
         _this.watting.enabled = false;
         _this.handPoker = {};
+        _this.lastPoker = {};
         _this.readyPoker = [];
         
         _this.pokerCache();
@@ -165,11 +171,12 @@ cc.Class({
         //data.countdown
         var _this = this;
 
+        //生成出牌按钮
         var playButton = cc.instantiate(_this.playButton);
         _this.node.addChild(playButton);
         playButton.setPosition(150, -50);
 
-        //出牌
+        //绑定出牌事件
         playButton.on('mousedown', function(event) {
             console.log(_this.readyPoker);
             var readySend = new Array();
@@ -186,10 +193,11 @@ cc.Class({
             var a = _this.ws.send(sendDataStr);
         });
 
+        //生成不出牌按钮
         var noPlayButton = cc.instantiate(_this.noPlayButton);
         _this.node.addChild(noPlayButton);
         noPlayButton.setPosition(-150, -50);
-        //不出
+        //绑定不出事件
         noPlayButton.on('mousedown', function(event) {
             console.log('不出');
             let sendData = {
@@ -199,6 +207,17 @@ cc.Class({
             let sendDataStr = JSON.stringify(sendData);
             var a = _this.ws.send(sendDataStr);
         });
+    },
+
+    clearPoker(data) {
+        //连续两人不管，清除上个人出的牌
+        var _this = this;
+        console.log('清除上个人出的牌');
+        var poker = JSON.parse(data.data);
+        poker.forEach(function(e) {
+            let poker = _this.node.getChildByName('node' + e).destroy();
+        })
+        _this.readyPoker = [];
     },
 
     dealt(data) {
@@ -230,7 +249,7 @@ cc.Class({
         var a = data;
         var windowSize = cc.view.getVisibleSize();
         var interval = windowSize.width / 22;
-        
+
         a.forEach(function(e, index) {
             //console.log(_this.pokerCacheData[e - 1]);
             var name = "node" + e;
@@ -266,6 +285,7 @@ cc.Class({
                         var newY = thisSprite.y - 35;
                     }
                     thisSprite.setPosition(thisSprite.x, newY);
+                    _this.lastPoker[index] = name;
                 })
             }
 
