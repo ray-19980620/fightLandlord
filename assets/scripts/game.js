@@ -213,11 +213,13 @@ cc.Class({
         //连续两人不管，清除上个人出的牌
         var _this = this;
         console.log('清除上个人出的牌');
-        var poker = JSON.parse(data.data);
+        //var poker = JSON.parse(data.data);
+        poker = data.data;
         poker.forEach(function(e) {
             let poker = _this.node.getChildByName('node' + e).destroy();
         })
         _this.readyPoker = [];
+        _this.lastPoker = {};
     },
 
     dealt(data) {
@@ -249,6 +251,15 @@ cc.Class({
         var a = data;
         var windowSize = cc.view.getVisibleSize();
         var interval = windowSize.width / 22;
+
+        console.log(JSON.stringify(_this.lastPoker));
+        if (JSON.stringify(_this.lastPoker) != "{}") {
+            for (let key in _this.lastPoker) {
+                _this.node.getChildByName(_this.lastPoker[key]).destroy();
+            }
+            _this.readyPoker = [];
+            _this.lastPoker = {};
+        }
 
         a.forEach(function(e, index) {
             //console.log(_this.pokerCacheData[e - 1]);
