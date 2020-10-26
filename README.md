@@ -1,3 +1,1 @@
-# fightLandlord
-
-- started at 2020/04/06
+#### 使用cocos creator开发的斗地主
